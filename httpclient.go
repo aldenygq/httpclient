@@ -16,14 +16,11 @@ const (
 	defaultKeepAlive               = 2 * time.Second
 )
 
-type HttpClient struct {
-	client *http.Client
-}
+var HttpClient *http.Client
 
-//func NewHttpClient(timeout int) *HttpClient {
-func NewHttpClient() *HttpClient {
 
-	return &HttpClient{client: &http.Client{
+func NewHttpClient() *http.Client {
+	HttpClient = &http.Client{
 		Transport: &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
 			DialContext: (&net.Dialer{
@@ -32,26 +29,31 @@ func NewHttpClient() *HttpClient {
 			}).DialContext,
 		},
 		Timeout: defaultDialTimeout,
-		},
 	}
+	return HttpClient
 }
 
-func (c *HttpClient) DoReq(ctx context.Context,method, u string, body interface{},header map[string]string,queryparams map[string]string) (*http.Response, error) {
+func DoReq(method, u string, body interface{},header map[string]string,queryparams map[string]string) (*http.Response, error) {
 	var (
 		req *http.Request
 		err error
 	)
-	req,err = c.NewReqByMethod(ctx,method, u,body,queryparams)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 2)
+	defer cancel()
+	
+	req,err = NewReqByMethod(ctx,method, u,body,queryparams)
 	if err != nil {
 		return nil, err
 	}
 	
-	err = c.SetRequestHeader(req,header)
-	if err != nil {
-		return nil, err
+	if header != nil && len(header) > 0{
+		for k, v := range header {
+			req.Header.Set(k, v)
+		}
 	}
+	req = req.WithContext(ctx)
 	
-	resp, err := c.client.Do(req)
+	resp, err := HttpClient.Do(req)
 	if err != nil {
 		return nil,err
 	}
@@ -60,7 +62,7 @@ func (c *HttpClient) DoReq(ctx context.Context,method, u string, body interface{
 	
 	return resp, nil
 }
-func (c *HttpClient) NewReqByMethod(method, u string, body interface{},queryparams map[string]string) (*http.Request,error) {
+func NewReqByMethod(ctx context.Context,method, u string, body interface{},queryparams map[string]string) (*http.Request,error) {
 	var (
 		err error
 		req *http.Request = &http.Request{}
@@ -73,29 +75,20 @@ func (c *HttpClient) NewReqByMethod(method, u string, body interface{},querypara
 		}
 	}
 	if method == "GET" || method == "DELETE" {
-		req, err = http.NewRequest(method, u, nil)
-		_,err = c.SetQuery(u,queryparams)
+		req, err = http.NewRequestWithContext(ctx,method, u, nil)
+		_,err = SetQuery(u,queryparams)
 		if err != nil {
 			return nil,err
 		}
 	} else if  method == "POST" || method == "PUT" {
-		req, err = http.NewRequest(method, u, bytes.NewReader(b))
+		req, err = http.NewRequestWithContext(ctx,method, u, bytes.NewReader(b))
 	} else {
 		return nil,errors.New("request method invalid")
 	}
 	return req,nil
 }
-func (c *HttpClient) SetRequestHeader(req *http.Request, header map[string]string) error {
-	if header != nil && len(header) > 0{
-		for k, v := range header {
-			req.Header.Set(k, v)
-		}
-	}
-	return nil
-}
-
 //set query
-func (c *HttpClient) SetQuery(u string, params map[string]string) (string, error) {
+func SetQuery(u string, params map[string]string) (string, error) {
 	var q url.Values
 	_u, err := url.Parse(u)
 	if err != nil {
