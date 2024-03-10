@@ -11,7 +11,8 @@ type HttpClient struct {
 	client *http.Client
 }
 
-func NewHttpClient(timeout int) *HttpClient {
+//func NewHttpClient(timeout int) *HttpClient {
+func NewHttpClient() *HttpClient {
 	/*
 	transport := &http.Transport{
 		//Proxy: http.ProxyFromEnvironment,
