@@ -2,6 +2,7 @@ package httpclient
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net"
@@ -46,12 +47,12 @@ func NewHttpClient() *HttpClient {
 	}
 }
 
-func (c *HttpClient) DoReq(method, u string, body interface{},header map[string]string,queryparams map[string]string) (*http.Response, error) {
+func (c *HttpClient) DoReq(ctx context.Context,method, u string, body interface{},header map[string]string,queryparams map[string]string) (*http.Response, error) {
 	var (
 		req *http.Request
 		err error
 	)
-	req,err = c.NewReqByMethod(method, u,body,queryparams)
+	req,err = c.NewReqByMethod(ctx,method, u,body,queryparams)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +71,7 @@ func (c *HttpClient) DoReq(method, u string, body interface{},header map[string]
 	
 	return resp, nil
 }
-func (c *HttpClient) NewReqByMethod(method, u string, body interface{},queryparams map[string]string) (*http.Request,error) {
+func (c *HttpClient) NewReqByMethod(ctx context.Context,method, u string, body interface{},queryparams map[string]string) (*http.Request,error) {
 	var (
 		err error
 		req *http.Request = &http.Request{}
@@ -93,6 +94,7 @@ func (c *HttpClient) NewReqByMethod(method, u string, body interface{},querypara
 	} else {
 		return nil,errors.New("request method invalid")
 	}
+	req = req.WithContext(ctx)
 	return req,nil
 }
 func (c *HttpClient) SetRequestHeader(req *http.Request, header map[string]string) error {
