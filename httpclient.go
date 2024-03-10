@@ -6,7 +6,6 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
-	"time"
 )
 type HttpClient struct {
 	client *http.Client
@@ -26,7 +25,7 @@ func NewHttpClient(timeout int) *HttpClient {
 	}
 	 */
 	return &HttpClient{client: &http.Client{
-		Timeout:   time.Second * time.Duration(timeout),
+		//Timeout:   time.Second * time.Duration(timeout),
 		//Transport: transport,
 		},
 	}
