@@ -4,9 +4,17 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"net"
 	"net/http"
 	"net/url"
+	"time"
 )
+
+const (
+	defaultDialTimeout             = 2 * time.Second
+	defaultKeepAlive               = 2 * time.Second
+)
+
 type HttpClient struct {
 	client *http.Client
 }
@@ -26,8 +34,14 @@ func NewHttpClient() *HttpClient {
 	}
 	 */
 	return &HttpClient{client: &http.Client{
-		//Timeout:   time.Second * time.Duration(timeout),
-		//Transport: transport,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   defaultDialTimeout,
+				KeepAlive: defaultKeepAlive,
+			}).DialContext,
+		},
+		Timeout: defaultDialTimeout,
 		},
 	}
 }
@@ -82,7 +96,7 @@ func (c *HttpClient) NewReqByMethod(method, u string, body interface{},querypara
 	return req,nil
 }
 func (c *HttpClient) SetRequestHeader(req *http.Request, header map[string]string) error {
-	if header != nil {
+	if header != nil && len(header) > 0{
 		for k, v := range header {
 			req.Header.Set(k, v)
 		}
