@@ -22,18 +22,7 @@ type HttpClient struct {
 
 //func NewHttpClient(timeout int) *HttpClient {
 func NewHttpClient() *HttpClient {
-	/*
-	transport := &http.Transport{
-		//Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   2 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).DialContext,
-		MaxIdleConns:        100,
-		IdleConnTimeout:     90 * time.Second,
-		//TLSHandshakeTimeout: 2 * time.Second,
-	}
-	 */
+
 	return &HttpClient{client: &http.Client{
 		Transport: &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
@@ -71,7 +60,7 @@ func (c *HttpClient) DoReq(ctx context.Context,method, u string, body interface{
 	
 	return resp, nil
 }
-func (c *HttpClient) NewReqByMethod(ctx context.Context,method, u string, body interface{},queryparams map[string]string) (*http.Request,error) {
+func (c *HttpClient) NewReqByMethod(method, u string, body interface{},queryparams map[string]string) (*http.Request,error) {
 	var (
 		err error
 		req *http.Request = &http.Request{}
@@ -94,7 +83,6 @@ func (c *HttpClient) NewReqByMethod(ctx context.Context,method, u string, body i
 	} else {
 		return nil,errors.New("request method invalid")
 	}
-	req = req.WithContext(ctx)
 	return req,nil
 }
 func (c *HttpClient) SetRequestHeader(req *http.Request, header map[string]string) error {
