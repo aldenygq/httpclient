@@ -52,7 +52,7 @@ func (c *HttpClient) DoReq(method, u string, body interface{},header map[string]
 		return nil,err
 	}
 	
-	defer resp.Body.Close()
+	//defer resp.Body.Close()
 	
 	return resp, nil
 }
