@@ -26,7 +26,7 @@ func NewHttpClient(timeout int) *HttpClient {
 	}
 	 */
 	return &HttpClient{client: &http.Client{
-		Timeout:   time.Second * timeout,
+		Timeout:   time.Second * time.Duration(timeout),
 		//Transport: transport,
 		},
 	}
