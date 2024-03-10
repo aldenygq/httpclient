@@ -2,7 +2,6 @@ package httpclient
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"net"
@@ -16,11 +15,14 @@ const (
 	defaultKeepAlive               = 2 * time.Second
 )
 
-var HttpClient *http.Client
+type HttpClient struct {
+	Client *http.Client
+}
 
 
-func NewHttpClient() *http.Client {
-	HttpClient = &http.Client{
+
+func NewHttpClient() *HttpClient {
+	return &HttpClient{Client: &http.Client{
 		Transport: &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
 			DialContext: (&net.Dialer{
@@ -29,19 +31,17 @@ func NewHttpClient() *http.Client {
 			}).DialContext,
 		},
 		Timeout: defaultDialTimeout,
+	},
 	}
-	return HttpClient
 }
 
-func DoReq(method, u string, body interface{},header map[string]string,queryparams map[string]string) (*http.Response, error) {
+func (c *HttpClient) DoReq(method, u string, body interface{},header map[string]string,queryparams map[string]string) (*http.Response, error) {
 	var (
 		req *http.Request
 		err error
 	)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 2)
-	defer cancel()
 	
-	req,err = NewReqByMethod(ctx,method, u,body,queryparams)
+	req,err = c.NewReqByMethod(method, u,body,queryparams)
 	if err != nil {
 		return nil, err
 	}
@@ -51,9 +51,8 @@ func DoReq(method, u string, body interface{},header map[string]string,querypara
 			req.Header.Set(k, v)
 		}
 	}
-	req = req.WithContext(ctx)
 	
-	resp, err := HttpClient.Do(req)
+	resp, err := c.Client.Do(req)
 	if err != nil {
 		return nil,err
 	}
@@ -62,7 +61,7 @@ func DoReq(method, u string, body interface{},header map[string]string,querypara
 	
 	return resp, nil
 }
-func NewReqByMethod(ctx context.Context,method, u string, body interface{},queryparams map[string]string) (*http.Request,error) {
+func (c *HttpClient) NewReqByMethod(method, u string, body interface{},queryparams map[string]string) (*http.Request,error) {
 	var (
 		err error
 		req *http.Request = &http.Request{}
@@ -75,20 +74,20 @@ func NewReqByMethod(ctx context.Context,method, u string, body interface{},query
 		}
 	}
 	if method == "GET" || method == "DELETE" {
-		req, err = http.NewRequestWithContext(ctx,method, u, nil)
-		_,err = SetQuery(u,queryparams)
+		req, err = http.NewRequest(method, u, nil)
+		_,err = c.SetQuery(u,queryparams)
 		if err != nil {
 			return nil,err
 		}
 	} else if  method == "POST" || method == "PUT" {
-		req, err = http.NewRequestWithContext(ctx,method, u, bytes.NewReader(b))
+		req, err = http.NewRequest(method, u, bytes.NewReader(b))
 	} else {
 		return nil,errors.New("request method invalid")
 	}
 	return req,nil
 }
 //set query
-func SetQuery(u string, params map[string]string) (string, error) {
+func (c *HttpClient) SetQuery(u string, params map[string]string) (string, error) {
 	var q url.Values
 	_u, err := url.Parse(u)
 	if err != nil {

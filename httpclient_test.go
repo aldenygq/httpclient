@@ -14,9 +14,9 @@ func Test_getUrl(t *testing.T) {
 	)
 	
 	queryparam[paramkey] = paramvalue
-	//_ = NewHttpClient()
+	c := NewHttpClient()
 	
-	url,err := SetQuery(u,queryparam)
+	url,err := c.SetQuery(u,queryparam)
 	if err != nil {
 		fmt.Printf("url set query param failed:%v\n",err)
 		return
