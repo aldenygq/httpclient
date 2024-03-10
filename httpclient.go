@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 )
@@ -39,16 +40,19 @@ func (c *HttpClient) DoReq(method, u string, body interface{},header map[string]
 	)
 	req,err = c.NewReqByMethod(method, u,body,queryparams)
 	if err != nil {
+		fmt.Printf("new request failed:%v\n",err)
 		return nil, err
 	}
 	
 	err = c.SetRequestHeader(req,header)
 	if err != nil {
+		fmt.Printf("set header failed:%v\n",err)
 		return nil, err
 	}
 	
 	resp, err := c.client.Do(req)
 	if err != nil {
+		fmt.Printf("do request failed:%v\n",err)
 		return nil,err
 	}
 	
